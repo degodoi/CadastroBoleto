@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         store.createIndex('quantidade', 'quantidade', { unique: false });
         store.createIndex('parcelas', 'parcelas', { unique: false });
         store.createIndex('valorTotal', 'valorTotal', { unique: false });
+        store.createIndex('valorRecebido', 'valorRecebido', { unique: false });
     };
 
     request.onsuccess = (event) => {
@@ -25,9 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const vencimento = document.getElementById('vencimento').value;
             const quantidade = parseInt(document.getElementById('quantidade').value, 10);
             const valorTotal = valor * quantidade;
+            const valorRecebido = 0;
             const parcelas = calcularParcelas(vencimento, quantidade);
             const descricao = `Parcela ${nome}`;
-            const boleto = { descricao, valor, vencimento, quantidade, parcelas, valorTotal };
+            const boleto = { descricao, valor, vencimento, quantidade, parcelas, valorTotal, valorRecebido };
 
             const transaction = db.transaction(['boletos'], 'readwrite');
             const store = transaction.objectStore('boletos');
@@ -45,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < quantidade; i++) {
                 const novaData = new Date(data);
                 novaData.setMonth(novaData.getMonth() + i);
-                parcelas.push(novaData.toISOString().split('T')[0]);
+                parcelas.push({ data: novaData.toISOString().split('T')[0], paga: false });
             }
             return parcelas;
         }
@@ -65,67 +67,111 @@ document.addEventListener('DOMContentLoaded', () => {
                         Vencimento Inicial: ${boleto.vencimento}<br>
                         Quantidade de Parcelas: ${boleto.quantidade}<br>
                         <div class="parcelas">
-                            ${boleto.parcelas.map((parcela, index) => `<span>Parcela ${index + 1}: ${parcela}</span>`).join('')}
+                            ${boleto.parcelas.map((parcela, index) => `
+                                <span>
+                                    Parcela ${index + 1}: ${parcela.data}
+                                    <button class="receber-button" onclick="toggleParcela(${boleto.id}, ${index})">
+                                        ${parcela.paga ? 'Paga' : 'RECEBER'}
+                                    </button>
+                                </span>`).join('')}
                         </div>
                         <div class="total">
-                        Valor Total: R$${boleto.valorTotal.toFixed(2)}
-                    </div>
-                    <button onclick="removeBoleto(${boleto.id})">Remover</button>
-                `;
-                boletoList.appendChild(li);
-            });
-        };
-    }
-
-    window.removeBoleto = (id) => {
-        const transaction = db.transaction(['boletos'], 'readwrite');
-        const store = transaction.objectStore('boletos');
-        store.delete(id);
-
-        transaction.oncomplete = () => {
-            displayBoletos();
-        };
-    };
-
-    function checkVencimentos() {
-        const transaction = db.transaction(['boletos'], 'readonly');
-        const store = transaction.objectStore('boletos');
-        const request = store.getAll();
-        const today = new Date().toISOString().split('T')[0];
-
-        request.onsuccess = () => {
-            request.result.forEach((boleto) => {
-                boleto.parcelas.forEach((parcela) => {
-                    if (parcela === today) {
-                        notifyUser(boleto.descricao);
-                    }
+                            Valor Total: R$${boleto.valorTotal.toFixed(2)}<br>
+                            Valor Recebido: R$${calcularValorRecebido(boleto.parcelas, boleto.valor).toFixed(2)}
+                        </div>
+                        <button onclick="removeBoleto(${boleto.id})">Remover</button>
+                    `;
+                    boletoList.appendChild(li);
                 });
-            });
-        };
-    }
+            };
+        }
 
-    function notifyUser(descricao) {
-        if (Notification.permission === 'granted') {
-            new Notification('Lembrete de Boleto', {
-                body: `O boleto ${descricao} vence hoje!`,
-            });
-        } else if (Notification.permission !== 'denied') {
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    new Notification('Lembrete de Boleto', {
-                        body: `O boleto ${descricao} vence hoje!`,
-                    });
+        window.toggleParcela = (id, index) => {
+            const transaction = db.transaction(['boletos'], 'readwrite');
+            const store = transaction.objectStore('boletos');
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                const boleto = request.result;
+                boleto.parcelas[index].paga = !boleto.parcelas[index].paga;
+
+                const updateRequest = store.put(boleto);
+
+                updateRequest.onsuccess = () => {
+                    displayBoletos();
+                };
+            };
+        };
+
+        window.removeBoleto = (id) => {
+            const transaction = db.transaction(['boletos'], 'readwrite');
+            const store = transaction.objectStore('boletos');
+            store.delete(id);
+
+            transaction.oncomplete = () => {
+                displayBoletos();
+            };
+        };
+
+        function calcularParcelas(dataInicial, quantidade) {
+            const parcelas = [];
+            const data = new Date(dataInicial);
+            for (let i = 0; i < quantidade; i++) {
+                const novaData = new Date(data);
+                novaData.setMonth(novaData.getMonth() + i);
+                parcelas.push({ data: novaData.toISOString().split('T')[0], paga: false });
+            }
+            return parcelas;
+        }
+
+        function calcularValorRecebido(parcelas, valorParcela) {
+            let valorRecebido = 0;
+            parcelas.forEach((parcela) => {
+                if (parcela.paga) {
+                    valorRecebido += valorParcela;
                 }
             });
+            return valorRecebido;
         }
-    }
 
-    displayBoletos();
-    checkVencimentos();
-    setInterval(checkVencimentos, 86400000); // Check daily
-};
+        function displayBoletos() {
+            const transaction = db.transaction(['boletos'], 'readonly');
+            const store = transaction.objectStore('boletos');
+            const request = store.getAll();
 
-request.onerror = (event) => {
-    console.error('Database error: ' + event.target.errorCode);
-};
+            request.onsuccess = () => {
+                boletoList.innerHTML = '';
+                request.result.forEach((boleto) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <strong>${boleto.descricao}</strong><br>
+                        Valor por Parcela: R$${boleto.valor.toFixed(2)}<br>
+                        Vencimento Inicial: ${boleto.vencimento}<br>
+                        Quantidade de Parcelas: ${boleto.quantidade}<br>
+                        <div class="parcelas">
+                            ${boleto.parcelas.map((parcela, index) => `
+                                <span>
+                                    Parcela ${index + 1}: ${parcela.data}
+                                    <button class="receber-button" onclick="toggleParcela(${boleto.id}, ${index})">
+                                        ${parcela.paga ? 'Paga' : 'RECEBER'}
+                                    </button>
+                                </span>`).join('')}
+                        </div>
+                        <div class="total">
+                            Valor Total: R$${boleto.valorTotal.toFixed(2)}<br>
+                            Valor Recebido: R$${calcularValorRecebido(boleto.parcelas, boleto.valor).toFixed(2)}
+                        </div>
+                        <button onclick="removeBoleto(${boleto.id})">Remover</button>
+                    `;
+                    boletoList.appendChild(li);
+                });
+            };
+        }
+
+        displayBoletos();
+    };
+
+    request.onerror = (event) => {
+        console.error('Database error: ' + event.target.errorCode);
+    };
 });
