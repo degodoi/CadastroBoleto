@@ -1,5 +1,5 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', sans-serif;
     background-color: #f4f4f4;
     margin: 0;
     padding: 0;
@@ -7,6 +7,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    color: #333;
 }
 
 .container {
@@ -14,59 +15,69 @@ body {
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    width: 800px;
+    width: 100%;
+    max-width: 900px;
     text-align: center;
-    overflow-y: auto;
-    max-height: calc(100vh - 40px);
 }
 
 h1 {
     margin-bottom: 20px;
+    color: #007BFF;
 }
 
 .content {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
     align-items: flex-start;
 }
 
-.form-container {
-    flex-basis: 48%;
-}
-
-.list-container {
-    flex-basis: 48%;
+.form-container, .list-container {
+    flex: 1 1 300px;
+    min-width: 300px;
 }
 
 form {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 15px;
 }
 
 label {
-    margin-bottom: 5px;
     text-align: left;
-    width: 100%;
+    font-weight: bold;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.input-group div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 input, button {
-    margin-bottom: 15px;
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    width: calc(100% - 20px);
     box-sizing: border-box;
 }
 
-input[type="date"] {
-    padding: 6px;
+input {
+    width: 100%;
 }
 
 button {
     background: #007BFF;
     color: white;
     cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
 }
 
 button:hover {
@@ -82,9 +93,14 @@ ul {
 li {
     background: #f9f9f9;
     margin-bottom: 10px;
-    padding: 10px;
+    padding: 15px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    transition: box-shadow 0.3s;
+}
+
+li:hover {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .parcelas {
@@ -101,18 +117,23 @@ li {
 }
 
 .receber-button {
-    padding: 2px 5px;
+    padding: 5px 10px;
     font-size: 0.8em;
     background: #28a745;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    width: auto;
+    transition: background 0.3s;
 }
 
 .receber-button:hover {
     background: #218838;
+}
+
+.paga {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
 }
 
 .total {
@@ -121,10 +142,37 @@ li {
     color: #333;
 }
 
-.pago {
-    background-color: #28a745;
+.remove-button {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
 }
 
-.recebido {
-    color: green;
+.remove-button:hover {
+    background: #c82333;
+}
+
+.alert {
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
 }
