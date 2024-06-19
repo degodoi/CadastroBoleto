@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function calcularParcelas(dataInicial, quantidade) {
             const parcelas = [];
-            const data = new Date(dataInicial);
+            const data = new Date(dataInicial + 'T00:00:00'); // Adicionando 'T00:00:00' para garantir o horário zero UTC
             for (let i = 0; i < quantidade; i++) {
                 const novaData = new Date(data);
                 novaData.setMonth(novaData.getMonth() + i);

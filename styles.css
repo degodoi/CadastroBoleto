@@ -96,11 +96,12 @@ li {
     padding: 15px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    transition: box-shadow 0.3s;
+    transition: box-shadow 0.3s, transform 0.3s;
 }
 
 li:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    transform: scale(1.02);
 }
 
 .parcelas {
