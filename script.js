@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const boletoForm = document.getElementById('boletoForm');
     const boletoList = document.getElementById('boletoList');
-    
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+
     const request = indexedDB.open('boletoDB', 1);
 
     request.onupgradeneeded = (event) => {
@@ -31,6 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 boletoForm.reset();
                 showAlert('Boleto cadastrado com sucesso!', 'success');
             };
+        });
+
+        searchButton.addEventListener('click', () => {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (searchTerm) {
+                searchBoletos(searchTerm);
+            } else {
+                displayBoletos();
+            }
         });
 
         window.toggleParcela = (id, index) => {
@@ -63,24 +74,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const valorRecebido = 0;
             const parcelas = calcularParcelas(vencimento, quantidade);
             const descricao = `Parcela ${nome}`;
-            return { descricao, valor, vencimento, quantidade, parcelas, valorTotal, valorRecebido };
+            return { nome, descricao, valor, vencimento, quantidade, parcelas, valorTotal, valorRecebido };
         }
 
         function calcularParcelas(dataInicial, quantidade) {
             const parcelas = [];
-            const data = new Date(dataInicial + 'T00:00:00'); // Adicionando 'T00:00:00' para garantir o horário zero UTC
+            const [year, month, day] = dataInicial.split('-').map(Number);
+            const data = new Date(Date.UTC(year, month - 1, day)); // Use UTC to avoid timezone issues
+
             for (let i = 0; i < quantidade; i++) {
                 const novaData = new Date(data);
-                novaData.setMonth(novaData.getMonth() + i);
+                novaData.setUTCMonth(novaData.getUTCMonth() + i);
                 parcelas.push({ data: formatDateBR(novaData), paga: false });
             }
             return parcelas;
         }
 
         function formatDateBR(date) {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // January is 0
-            const year = String(date.getFullYear()).slice(2); // Get last two digits of the year
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // January is 0
+            const year = String(date.getUTCFullYear()).slice(2); // Get last two digits of the year
             return `${day}-${month}-${year}`;
         }
 
@@ -104,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         Quantidade de Parcelas: ${boleto.quantidade}<br>
                         <div class="parcelas">
                             ${boleto.parcelas.map((parcela, index) => `
-                                <span class="${parcela.paga ? 'paga' : ''}">
+                                <span class="${parcela.paga ? 'paga' : isParcelaVencida(parcela.data) ? 'vencida' : ''}">
                                     Parcela ${index + 1}: ${parcela.data}
                                     <button class="receber-button" onclick="toggleParcela(${boleto.id}, ${index})">
                                         ${parcela.paga ? 'Paga' : 'RECEBER'}
@@ -118,6 +131,50 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="remove-button" onclick="removeBoleto(${boleto.id})">Remover</button>
                     `;
                     boletoList.appendChild(li);
+                });
+            };
+        }
+
+        function isParcelaVencida(dataParcela) {
+            const [day, month, year] = dataParcela.split('-').map(Number);
+            const data = new Date(Date.UTC(2000 + year, month - 1, day)); // Adjust year to full format
+            const today = new Date();
+            return data < today;
+        }
+
+        function searchBoletos(searchTerm) {
+            const transaction = db.transaction(['boletos'], 'readonly');
+            const store = transaction.objectStore('boletos');
+            const index = store.index('nome');
+            const request = index.getAll();
+
+            request.onsuccess = () => {
+                boletoList.innerHTML = '';
+                request.result.forEach((boleto) => {
+                    if (boleto.nome.toLowerCase().includes(searchTerm)) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <strong>${boleto.descricao}</strong><br>
+                            Valor por Parcela: R$${boleto.valor.toFixed(2)}<br>
+                            Vencimento Inicial: ${formatDateBR(new Date(boleto.vencimento))}<br>
+                            Quantidade de Parcelas: ${boleto.quantidade}<br>
+                            <div class="parcelas">
+                                ${boleto.parcelas.map((parcela, index) => `
+                                    <span class="${parcela.paga ? 'paga' : isParcelaVencida(parcela.data) ? 'vencida' : ''}">
+                                        Parcela ${index + 1}: ${parcela.data}
+                                        <button class="receber-button" onclick="toggleParcela(${boleto.id}, ${index})">
+                                            ${parcela.paga ? 'Paga' : 'RECEBER'}
+                                        </button>
+                                    </span>`).join('')}
+                            </div>
+                            <div class="total">
+                                Valor Total: R$${boleto.valorTotal.toFixed(2)}<br>
+                                Valor Recebido: R$${calcularValorRecebido(boleto.parcelas, boleto.valor).toFixed(2)}
+                            </div>
+                            <button class="remove-button" onclick="removeBoleto(${boleto.id})">Remover</button>
+                        `;
+                        boletoList.appendChild(li);
+                    }
                 });
             };
         }

@@ -33,9 +33,15 @@ h1 {
     align-items: flex-start;
 }
 
-.form-container, .list-container {
+.form-container,
+.list-container {
     flex: 1 1 300px;
     min-width: 300px;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #333;
 }
 
 form {
@@ -61,7 +67,8 @@ label {
     flex-direction: column;
 }
 
-input, button {
+input,
+button {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -82,6 +89,44 @@ button {
 
 button:hover {
     background: #0056b3;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#searchInput {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#searchButton {
+    padding: 10px;
+    background: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+    flex-shrink: 0;
+    /* Garante que o botão não encolha */
+    width: auto;
+    /* Ajusta o botão ao conteúdo */
+}
+
+#searchButton:hover {
+    background: #0056b3;
+}
+
+.vencida {
+    color: red;
 }
 
 ul {

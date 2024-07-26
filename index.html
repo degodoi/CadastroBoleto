@@ -1,25 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sistema de Boletos para cadastrar, listar e gerenciar boletos.">
-    <title>Sistema de Boletos</title>
+    <title>Boleto Ease C.F.C DIREÇÃO</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
-        <h1>Sistema de Boletos</h1>
+        <h1>BOLETOS C.F.C DIREÇÃO</h1>
         <div class="content">
             <div class="form-container">
                 <h2>Cadastrar Boleto</h2>
                 <form id="boletoForm">
                     <label for="nome">Nome:</label>
                     <input type="text" id="nome" name="nome" placeholder="Digite seu nome" required>
-                    
+
                     <div class="input-group">
                         <div>
-                            <label for="valor">Valor:</label>
+                            <label for="valor">Valor das Parcelas:</label>
                             <input type="number" id="valor" name="valor" placeholder="R$" required>
                         </div>
                         <div>
@@ -27,19 +29,24 @@
                             <input type="date" id="vencimento" name="vencimento" required>
                         </div>
                     </div>
-                    
+
                     <label for="quantidade">Quantidade de Parcelas:</label>
-                    <input type="number" id="quantidade" name="quantidade" min="1" value="1" required>
-                    
+                    <input type="number" id="quantidade" name="quantidade" min="1" max="5" value="1" required>
+
                     <button type="submit">Cadastrar Boleto</button>
                 </form>
             </div>
             <div class="list-container">
                 <h2>Boletos Cadastrados</h2>
+                <div class="input-group search-container">
+                    <input type="text" id="searchInput" placeholder="Pesquisar boleto pelo nome...">
+                    <button id="searchButton">Pesquisar</button>
+                </div>
                 <ul id="boletoList"></ul>
             </div>
         </div>
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>
